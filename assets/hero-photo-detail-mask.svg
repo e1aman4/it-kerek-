@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 735 686">
+  <defs>
+    <filter id="soft-edges" x="-10%" y="-10%" width="120%" height="120%">
+      <feGaussianBlur stdDeviation="4"/>
+    </filter>
+  </defs>
+  <g fill="#fff" filter="url(#soft-edges)">
+    <rect x="370" y="14" width="380" height="245" rx="30"/>
+    <rect x="165" y="211" width="224" height="94" rx="18"/>
+    <rect x="392" y="278" width="212" height="96" rx="18"/>
+    <rect x="242" y="373" width="209" height="96" rx="18"/>
+    <rect x="458" y="418" width="222" height="98" rx="18"/>
+    <rect x="380" y="563" width="98" height="67" rx="32"/>
+    <rect x="482" y="563" width="98" height="67" rx="32"/>
+    <rect x="584" y="563" width="110" height="67" rx="32"/>
+  </g>
+</svg>

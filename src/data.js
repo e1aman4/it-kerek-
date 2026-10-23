@@ -1,0 +1,120 @@
+export const services = [
+  {
+    slug: "web-development",
+    number: "01",
+    title: "Разработка сайтов",
+    description: "Проектируем и разрабатываем быстрые сайты и web-продукты, которые объясняют ценность, привлекают клиентов и автоматизируют продажи.",
+    price: 30000,
+    from: "от 30 000 сом",
+  },
+  {
+    slug: "programming",
+    number: "02",
+    title: "Программирование",
+    description: "Создаём индивидуальное программное обеспечение под реальные процессы, роли и показатели вашей компании.",
+    price: 0,
+    from: "по запросу",
+  },
+  {
+    slug: "mobile-development",
+    number: "03",
+    title: "Мобильная разработка",
+    description: "Разрабатываем мобильные приложения с понятным интерфейсом, надёжной архитектурой и готовностью к росту.",
+    price: 150000,
+    from: "от 150 000 сом",
+  },
+  {
+    slug: "bots",
+    number: "04",
+    title: "Боты",
+    description: "Автоматизируем ответы, продажи, поддержку и внутренние операции через удобные мессенджеры.",
+    price: 20000,
+    from: "от 20 000 сом",
+  },
+  {
+    slug: "ai",
+    number: "05",
+    title: "AI-решения",
+    description: "Встраиваем искусственный интеллект в процессы компании: от консультаций до анализа документов и корпоративных знаний.",
+    price: 0,
+    from: "по запросу",
+  },
+  {
+    slug: "automation",
+    number: "06",
+    title: "Автоматизация бизнеса",
+    description: "Убираем ручные операции, связываем отделы и превращаем процессы в измеримую управляемую систему.",
+    price: 150000,
+    from: "от 150 000 сом",
+  },
+  {
+    slug: "infrastructure",
+    number: "07",
+    title: "IT-инфраструктура",
+    description: "Строим стабильную и безопасную технологическую основу компании: серверы, сети, облака, данные и поддержку.",
+    price: 0,
+    from: "с выездом на объект",
+  },
+  {
+    slug: "security-systems",
+    number: "08",
+    title: "Системы безопасности",
+    description: "Проектируем и внедряем комплексную защиту объектов, людей, транспорта и цифровой инфраструктуры.",
+    price: 0,
+    from: "по запросу",
+  },
+];
+
+export const products = [
+  { id: "landing", title: "Landing Page", priceLabel: "Landing", price: 30000, timing: "10–15 дней" },
+  { id: "corporate", title: "Корпоративный сайт", priceLabel: "Корпоративный сайт", price: 60000, timing: "20–30 дней" },
+  { id: "shop", title: "Интернет-магазин", priceLabel: "Интернет-магазин", price: 100000, timing: "30–45 дней" },
+  { id: "crm", title: "CRM", priceLabel: "CRM", price: 150000, timing: "30–60 дней" },
+  { id: "mobile", title: "Мобильное приложение", priceLabel: "Мобильное приложение", price: 150000, timing: "45–90 дней" },
+  { id: "telegram", title: "Telegram-бот", priceLabel: "Telegram-бот", price: 20000, timing: "7–14 дней" },
+];
+
+export const addOns = [
+  { id: "admin", title: "Админ-панель", price: 25000 },
+  { id: "payment", title: "Онлайн-оплата", price: 20000 },
+  { id: "languages", title: "Три языка", price: 15000 },
+  { id: "account", title: "Личный кабинет", price: 35000 },
+  { id: "api", title: "API / интеграции", price: 30000 },
+  { id: "ai", title: "AI-функции", price: 50000 },
+];
+
+export const priceList = [
+  { title: "Видеонаблюдение на 4 камеры", price: 38000, href: "/cameras/" },
+];
+
+export const projects = [
+  { id: "M 01 / CRM", name: "Muras Pay", description: "Платёжная платформа для малого бизнеса", category: "CRM", tech: "Next.js · NestJS · PostgreSQL", time: "4 месяца", features: "Платежи, отчёты, роли, аналитика" },
+  { id: "N 02 / Автоматизация", name: "Nomad Flow", description: "Управление международными перевозками", category: "Автоматизация", tech: "React · Node.js · REST API", time: "5 месяцев", features: "Маршруты, документы, статусы, CRM" },
+  { id: "S 03 / AI", name: "Sana AI", description: "AI-помощник службы поддержки", category: "AI", tech: "LLM · RAG · TypeScript", time: "3 месяца", features: "База знаний, ответы, аналитика" },
+  { id: "A 04 / Сайты", name: "Archa Market", description: "Интернет-магазин локальных брендов", category: "Сайты", tech: "Next.js · Stripe · CMS", time: "2,5 месяца", features: "Каталог, оплата, доставка, бонусы" },
+  { id: "B 05 / Мобильные приложения", name: "Birim", description: "Мобильная система управления командой", category: "Мобильные приложения", tech: "React Native · Node.js", time: "4 месяца", features: "Задачи, чат, отчёты, уведомления" },
+  { id: "S 06 / Боты", name: "Sat Bot", description: "Telegram-бот для автоматизации продаж", category: "Боты", tech: "Telegram API · CRM", time: "20 дней", features: "Квалификация, каталог, заявка, уведомления" },
+];
+
+export const defaultSiteData = {
+  services,
+  products,
+  addOns,
+  projects,
+  home: {
+    eyebrow: "IT-КОМАНДА · БИШКЕК",
+    headline: "Решаем задачи бизнеса",
+    tagline: "технологиями и монтажом.",
+    description: "Сайты, CRM, сети и видеонаблюдение. Каждый раздел — отдельная услуга с понятной ценой и следующим шагом.",
+    stats: [
+      { value: "4", label: "направления" },
+      { value: "1", label: "команда" },
+      { value: "12", label: "мес. гарантии" },
+    ],
+  },
+  cameraPricing: {
+    4: 38000,
+    8: 76000,
+    16: null,
+  },
+};
