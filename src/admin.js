@@ -47,7 +47,7 @@ function showLogin(errorMessage = "") {
   app.innerHTML = `
     <section class="admin-login">
       <form class="login-card" id="login-form">
-        <a class="admin-brand" href="/"><span class="admin-mark">N</span><span>IT-Kerek <i>ADMIN</i></span></a>
+        <a class="admin-brand" href="/"><img class="admin-mark" src="/assets/it-kerek-logo.png" alt="" /><span>IT-Kerek <i>ADMIN</i></span></a>
         <p class="admin-kicker">ЗАЩИЩЁННЫЙ ДОСТУП</p>
         <h1>Вход в панель</h1>
         <p class="admin-muted">Аналитика сайта и управление контентом.</p>
@@ -87,7 +87,7 @@ async function showDashboard() {
   app.innerHTML = `
     <div class="admin-shell">
       <aside class="admin-sidebar">
-        <a class="admin-brand" href="/"><span class="admin-mark">N</span><span>IT-Kerek <i>ADMIN</i></span></a>
+        <a class="admin-brand" href="/"><img class="admin-mark" src="/assets/it-kerek-logo.png" alt="" /><span>IT-Kerek <i>ADMIN</i></span></a>
         <p class="sidebar-label">РАБОЧАЯ ОБЛАСТЬ</p>
         <nav class="admin-nav" aria-label="Разделы панели">
           <button data-tab="overview">◫ <span>Обзор</span></button>

@@ -1,13 +1,83 @@
 import { defaultSiteData } from "./data.js";
+import { translations } from "./translations.js";
 
 const app = document.querySelector("#app");
 const savedTheme = localStorage.getItem("it-kerek-theme");
 if (savedTheme === "dark") document.body.dataset.theme = "dark";
-const numberFormat = new Intl.NumberFormat("ru-RU");
+const storedLocale = localStorage.getItem("it-kerek-locale");
+const currentLocale = Object.hasOwn(translations, storedLocale) ? storedLocale : "ru";
+const localeTag = currentLocale === "ky" ? "ky-KG" : currentLocale === "en" ? "en-US" : "ru-RU";
+const numberFormat = new Intl.NumberFormat(localeTag);
 const path = window.location.pathname.replace(/\/+$/, "") || "/";
 let siteData = structuredClone(defaultSiteData);
 const link = (href, text, className = "") => `<a class="${className}" href="${href}">${text}</a>`;
-const money = (amount) => `${numberFormat.format(amount)} сом`;
+const money = (amount) => `${numberFormat.format(amount)} ${currentLocale === "en" ? "KGS" : "сом"}`;
+const translateText = (value) => {
+  const dictionary = translations[currentLocale];
+  if (!dictionary) return value;
+  if (value.includes("\n")) return value.split("\n").map(translateText).join("\n");
+  const trimmed = value.trim();
+  if (dictionary[trimmed]) return value.replace(trimmed, dictionary[trimmed]);
+
+  const contextLine = trimmed.match(/^(Продукт|Дополнительно|Предварительная стоимость|Срок):\s*(.*)$/);
+  if (contextLine) {
+    const label = dictionary[contextLine[1]] || contextLine[1];
+    return value.replace(trimmed, `${label}: ${translateText(contextLine[2])}`);
+  }
+  if (trimmed.startsWith("Интересует:")) {
+    return value.replace(trimmed, `${dictionary["Интересует:"] || "Интересует:"}${translateText(trimmed.slice("Интересует:".length))}`);
+  }
+  const serviceCount = trimmed.match(/^(\d+) категорий доступны в каталоге$/);
+  if (serviceCount) {
+    const phrase = currentLocale === "en" ? "services available in the catalog" : "кызмат каталогдо жеткиликтүү";
+    return value.replace(trimmed, `${serviceCount[1]} ${phrase}`);
+  }
+  const startingPrice = trimmed.match(/^от\s+(.+?)\s+(?:сом|KGS)$/);
+  if (startingPrice) {
+    const formattedPrice = `${numberFormat.format(Number(startingPrice[1].replace(/[,\s]/g, "")))} ${currentLocale === "en" ? "KGS" : "сом"}`;
+    return value.replace(trimmed, currentLocale === "en" ? `from ${formattedPrice}` : `${formattedPrice} баштап`);
+  }
+  const serviceLabel = trimmed.match(/^УСЛУГА \/ (.+)$/);
+  if (serviceLabel) {
+    const prefix = currentLocale === "en" ? "SERVICE" : "КЫЗМАТ";
+    return value.replace(trimmed, `${prefix} / ${serviceLabel[1]}`);
+  }
+  const includedCameraCount = trimmed.match(/^(\d+) камер(?:а|ы)? 4MP$/);
+  if (includedCameraCount) {
+    const cameras = currentLocale === "en" ? (includedCameraCount[1] === "1" ? "camera" : "cameras") : "камера";
+    return value.replace(trimmed, `${includedCameraCount[1]} ${cameras} 4MP`);
+  }
+  const cameraCount = trimmed.match(/^(\d+) камер(?:а|ы)?$/);
+  if (cameraCount) {
+    const suffix = currentLocale === "en" ? (cameraCount[1] === "1" ? "camera" : "cameras") : "камера";
+    return value.replace(trimmed, `${cameraCount[1]} ${suffix}`);
+  }
+  return value;
+};
+
+function localizePage() {
+  document.documentElement.lang = currentLocale;
+  document.title = translateText(document.title);
+  const description = document.querySelector('meta[name="description"]');
+  if (description) {
+    const translatedDescription = translateText(description.content);
+    if (translatedDescription !== description.content) description.content = translatedDescription;
+  }
+  const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+  while (walker.nextNode()) {
+    const node = walker.currentNode;
+    node.nodeValue = translateText(node.nodeValue);
+  }
+  document.querySelectorAll("[aria-label], [title], [placeholder], img[alt]").forEach((element) => {
+    for (const attribute of ["aria-label", "title", "placeholder", "alt"]) {
+      const value = element.getAttribute(attribute);
+      if (value) {
+        const translatedValue = translateText(value);
+        if (translatedValue !== value) element.setAttribute(attribute, translatedValue);
+      }
+    }
+  });
+}
 const escapeHtml = (value) => String(value).replace(/[&<>"']/g, (character) => ({
   "&": "&amp;",
   "<": "&lt;",
@@ -34,11 +104,19 @@ function header() {
   return `
     <header class="site-header" id="top">
       <a class="brand" href="/" aria-label="IT-Kerek — главная">
-        <span class="brand-mark brand-mark-logo" aria-hidden="true"><svg viewBox="0 0 64 48" fill="none"><path d="M20 3 3 20l17 17 11-11-6-6-5 5-5-5 11-11 11 11-7 7 6 6 13-13L32 3 20 15 8 27" stroke="currentColor" stroke-width="5" stroke-linejoin="round"/><path d="m43 3 17 17-17 17-11-11 6-6 5 5 5-5-11-11-11 11 7 7-6 6L14 20 31 3l12 12 12 12" stroke="currentColor" stroke-width="5" stroke-linejoin="round"/></svg></span>
+        <img class="brand-mark brand-mark-logo" src="/assets/it-kerek-logo.png" alt="" />
         <span>IT-KEREK</span>
       </a>
       ${menu}
       <div class="header-actions">
+        <label class="language-control">
+          <span class="visually-hidden">Язык сайта</span>
+          <select class="language-select" aria-label="Язык сайта">
+            <option value="ru"${currentLocale === "ru" ? " selected" : ""}>Русский</option>
+            <option value="ky"${currentLocale === "ky" ? " selected" : ""}>Кыргызча</option>
+            <option value="en"${currentLocale === "en" ? " selected" : ""}>English</option>
+          </select>
+        </label>
         ${themeToggle}
         <a class="button button-dark header-cta" href="/contact/#consultation" aria-label="Обсудить проект">
           <span class="header-cta-label">Обсудить проект</span><span class="header-cta-short-label">Связаться</span><span aria-hidden="true">→</span>
@@ -50,6 +128,14 @@ function header() {
     </header>`;
 }
 
+function initializeLanguage() {
+  const select = document.querySelector(".language-select");
+  select.addEventListener("change", () => {
+    localStorage.setItem("it-kerek-locale", select.value);
+    window.location.reload();
+  });
+}
+
 function footer() {
   const year = new Date().getFullYear();
   return `
@@ -57,7 +143,7 @@ function footer() {
       <div class="footer-main">
         <div class="footer-brand-column">
           <a class="brand footer-brand" href="/" aria-label="IT-Kerek — главная">
-            <span class="brand-mark" aria-hidden="true">N</span><span>IT-Kerek</span>
+            <img class="brand-mark brand-mark-logo" src="/assets/it-kerek-logo.png" alt="" /><span>IT-Kerek</span>
           </a>
           <p class="footer-description">IT-KEREK — технологии для бизнеса и современной недвижимости. Разрабатываем цифровые решения, автоматизируем процессы и устанавливаем технологическую инфраструктуру.</p>
           <p class="footer-location"><span aria-hidden="true">⌖</span> Бишкек</p>
@@ -372,9 +458,9 @@ function contactPage() {
         <label>Имя<input name="name" autocomplete="name" required /></label>
         <label>Телефон / WhatsApp<input name="phone" autocomplete="tel" type="tel" required /></label>
         <label>Email<input name="email" autocomplete="email" type="email" /></label>
-        <label>Комментарий<textarea name="message" rows="4">${context ? `Интересует:\n${escapeHtml(context)}` : ""}</textarea></label>
+        <label>Комментарий<textarea name="message" rows="4">${context ? escapeHtml(translateText(`Интересует:\n${context}`)) : ""}</textarea></label>
         <button class="button button-dark" type="submit">Отправить заявку <span>→</span></button>
-        <p class="form-status" id="form-status" role="status">Отправка заявок пока не подключена к серверу. Форма не сохранит ваши данные.</p>
+        <p class="form-status" id="form-status" role="status">Заявка будет отправлена команде в Telegram. Не указывайте в сообщении пароли и другие секретные данные.</p>
       </form>
     </section>
   </main>`;
@@ -419,6 +505,7 @@ async function startSite() {
   if (!pageContent) return;
   app.innerHTML = `${header()}${pageContent}${faqSection()}${footer()}`;
   document.title = path === "/" ? "IT-Kerek — IT-услуги и видеонаблюдение в Бишкеке" : `${path === "/prices" ? "Цены" : path === "/services" ? "Услуги" : path === "/portfolio" ? "Проекты" : path === "/cameras" ? "Видеонаблюдение" : path === "/contact" ? "Контакты" : "Услуга"} — IT-Kerek`;
+  localizePage();
   initializeCalculators();
   initializePortfolio();
   initializeFaq();
@@ -426,7 +513,16 @@ async function startSite() {
   preselectProduct();
   initializeTheme();
   initializeHeader();
+  initializeLanguage();
   initializeAnalytics();
+  localizePage();
+  const localizationObserver = new MutationObserver(localizePage);
+  localizationObserver.observe(document.body, {
+    attributes: true,
+    attributeFilter: ["aria-label", "title", "placeholder", "alt"],
+    childList: true,
+    subtree: true,
+  });
 }
 
 startSite();
@@ -596,10 +692,29 @@ function initializePortfolio() {
 function initializeForm() {
   const form = document.querySelector("#lead-form");
   if (!form) return;
-  form.addEventListener("submit", (event) => {
+  form.addEventListener("submit", async (event) => {
     event.preventDefault();
     const status = document.querySelector("#form-status");
-    status.textContent = "Заявка не отправлена: сервер обработки заявок не настроен. Введённые данные остались только в этой вкладке.";
-    status.classList.add("form-status-error");
+    const submitButton = form.querySelector('button[type="submit"]');
+    status.classList.remove("form-status-error");
+    status.textContent = "Отправляем заявку…";
+    submitButton.disabled = true;
+    try {
+      const values = Object.fromEntries(new FormData(form).entries());
+      const response = await fetch("/api/lead", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(values),
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || "Не удалось отправить заявку.");
+      status.textContent = "Заявка отправлена. Мы свяжемся с вами по указанному телефону.";
+      form.reset();
+    } catch (error) {
+      status.textContent = error instanceof Error ? error.message : "Не удалось отправить заявку. Попробуйте позже.";
+      status.classList.add("form-status-error");
+    } finally {
+      submitButton.disabled = false;
+    }
   });
 }

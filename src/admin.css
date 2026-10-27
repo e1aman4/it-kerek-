@@ -24,7 +24,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
 .admin-sidebar { position: sticky; top: 0; height: 100vh; display: flex; flex-direction: column; padding: 27px 17px 20px; color: #f4f5ed; background: var(--sidebar); }
 .admin-brand { display: flex; align-items: center; gap: 11px; padding: 0 7px; font-size: 14px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
 .admin-brand i { margin-left: 4px; color: var(--lime); font-size: 9px; font-style: normal; letter-spacing: .12em; }
-.admin-mark { width: 37px; height: 37px; display: grid; place-items: center; border-radius: 50%; color: var(--sidebar); background: var(--lime); font-size: 18px; }
+.admin-mark { width: 37px; height: 37px; flex: 0 0 auto; border-radius: 50%; object-fit: contain; }
 .sidebar-label, .admin-kicker, .section-overline { font-size: 9px; font-weight: 800; letter-spacing: .15em; }
 .sidebar-label { margin: 49px 9px 13px; color: #77796e; }
 .admin-nav { display: grid; gap: 5px; }

@@ -10,6 +10,7 @@ $analyticsPath = Join-Path $dataDirectory "analytics.jsonl"
 $authPath = Join-Path $dataDirectory "admin-auth.json"
 $sessions = @{}
 $loginAttempts = @{}
+$leadAttempts = @{}
 $sessionLifetimeSeconds = 28800
 $passwordIterations = 310000
 $analyticsCount = 0
@@ -122,6 +123,38 @@ function Test-SameOrigin($Context) {
   if ([string]::IsNullOrWhiteSpace($origin)) { return $false }
   $expected = "http://127.0.0.1:$Port"
   return $origin -eq $expected
+}
+
+function Test-LeadSameOrigin($Context) {
+  $origin = $Context.Request.Headers["Origin"]
+  if ([string]::IsNullOrWhiteSpace($origin)) { return $false }
+  return $origin -eq $Context.Request.Url.GetLeftPart([UriPartial]::Authority)
+}
+
+function Get-SafeLeadField([string]$Value, [int]$MaxLength, [switch]$AllowNewLines) {
+  if ($AllowNewLines) {
+    $Value = $Value -replace "[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]", ""
+  } else {
+    $Value = $Value -replace "[\x00-\x1F\x7F]", " "
+  }
+  $Value = $Value.Trim()
+  if ($Value.Length -gt $MaxLength) { $Value = $Value.Substring(0, $MaxLength) }
+  return $Value
+}
+
+function Send-TelegramLead([string]$Message) {
+  $token = $env:ITKEREK_TELEGRAM_BOT_TOKEN
+  $chatId = $env:ITKEREK_TELEGRAM_CHAT_ID
+  if ([string]::IsNullOrWhiteSpace($token) -or [string]::IsNullOrWhiteSpace($chatId)) {
+    return $false
+  }
+  $response = Invoke-RestMethod `
+    -Uri "https://api.telegram.org/bot$token/sendMessage" `
+    -Method Post `
+    -Body @{ chat_id = $chatId; text = $Message; disable_web_page_preview = "true" } `
+    -ContentType "application/x-www-form-urlencoded; charset=utf-8" `
+    -TimeoutSec 10
+  return $response.ok -eq $true
 }
 
 function Get-RequestJson($Context, [int]$MaxBytes = 1048576) {
@@ -276,6 +309,55 @@ while ($listener.IsListening) {
     $request = $context.Request
     $requestPath = $request.Url.AbsolutePath.TrimEnd("/")
     if ([string]::IsNullOrEmpty($requestPath)) { $requestPath = "/" }
+
+    if ($requestPath -eq "/api/lead") {
+      if ($request.HttpMethod -ne "POST") { Write-Json $context 405 @{ error = "Method not allowed." }; continue }
+      if (-not (Test-LeadSameOrigin $context)) { Write-Json $context 403 @{ error = "Запрос отклонён проверкой источника." }; continue }
+      if ([string]::IsNullOrWhiteSpace($env:ITKEREK_TELEGRAM_BOT_TOKEN) -or [string]::IsNullOrWhiteSpace($env:ITKEREK_TELEGRAM_CHAT_ID)) {
+        Write-Json $context 503 @{ error = "Отправка заявок временно не настроена. Попробуйте позже." }
+        continue
+      }
+
+      $address = $request.RemoteEndPoint.Address.ToString()
+      $now = [DateTime]::UtcNow
+      if (-not $leadAttempts.ContainsKey($address)) { $leadAttempts[$address] = @() }
+      $leadAttempts[$address] = @($leadAttempts[$address] | Where-Object { $_ -gt $now.AddMinutes(-10) })
+      if ($leadAttempts[$address].Count -ge 5) { Write-Json $context 429 @{ error = "Слишком много заявок. Попробуйте позже." }; continue }
+
+      try {
+        $body = Read-JsonBody $context 8192
+        $name = Get-SafeLeadField ([string]$body.name) 100
+        $phone = Get-SafeLeadField ([string]$body.phone) 40
+        $email = Get-SafeLeadField ([string]$body.email) 254
+        $message = Get-SafeLeadField ([string]$body.message) 2000 -AllowNewLines
+        if ([string]::IsNullOrWhiteSpace($name) -or [string]::IsNullOrWhiteSpace($phone)) {
+          Write-Json $context 400 @{ error = "Укажите имя и номер телефона." }
+          continue
+        }
+        if ($email -and $email -notmatch "^[^@\s]+@[^@\s]+\.[^@\s]+$") {
+          Write-Json $context 400 @{ error = "Проверьте правильность email." }
+          continue
+        }
+        $leadAttempts[$address] += $now
+
+        $telegramMessage = @(
+          "Новая заявка с сайта IT-KEREK"
+          "Имя: $name"
+          "Телефон / WhatsApp: $phone"
+          "Email: $(if ($email) { $email } else { "не указан" })"
+          "Комментарий: $(if ($message) { $message } else { "не указан" })"
+        ) -join "`n"
+        if (-not (Send-TelegramLead $telegramMessage)) {
+          Write-Json $context 502 @{ error = "Не удалось доставить заявку в Telegram. Попробуйте позже." }
+          continue
+        }
+        Write-Json $context 200 @{ ok = $true }
+      } catch {
+        Write-Warning "Lead delivery failed; submitted customer data was not logged."
+        Write-Json $context 502 @{ error = "Не удалось доставить заявку в Telegram. Попробуйте позже." }
+      }
+      continue
+    }
 
     if ($requestPath -eq "/api/analytics" -and $request.HttpMethod -eq "POST") {
       try {
